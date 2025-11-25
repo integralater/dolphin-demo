@@ -1,0 +1,6 @@
+streamlit
+gTTS
+pydub
+numpy
+imageio-ffmpeg
+matplotlib

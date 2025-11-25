@@ -6,7 +6,7 @@ import tempfile
 import time # 로딩 표시를 위해 추가
 # 1단계에서 분리한 핵심 로직을 가져옵니다.
 from Expression_Syntax import *
-from LaTeX_Paser import *
+from LaTeX_Parser import *
 from gtts_expr_audio_pitch import *
 
 # ----------------- A. 페이지 설정 -----------------
