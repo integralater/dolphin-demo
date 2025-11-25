@@ -46,7 +46,7 @@ if latex_input.strip():
         st.latex(latex_input)
         
         # 파싱 결과를 일반 텍스트로도 보여줄 수 있습니다.
-        st.caption(f"파싱된 내부 구조 (Repr): {repr(ast_root)}")
+        st.text(f"파싱된 내부 구조 (Repr): {repr(ast_root)}")
 
     except Exception as e:
         # 파싱 오류 시에는 오류 메시지 출력
