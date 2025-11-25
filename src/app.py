@@ -5,7 +5,9 @@ import os
 import tempfile
 import time # 로딩 표시를 위해 추가
 # 1단계에서 분리한 핵심 로직을 가져옵니다.
-from core import *
+from Expression_Syntax import *
+from LaTeX_Paser import *
+from gtts_expr_audio_pitch import *
 
 # ----------------- A. 페이지 설정 -----------------
 st.set_page_config(
@@ -28,6 +30,32 @@ latex_input = st.text_area(
     height=150
 )
 
+st.subheader("일반 수식 표기 (실시간 미리보기)")
+
+if latex_input.strip():
+    # 📌 실시간 변환 로직 (버튼 클릭과 무관하게 실행됨)
+    try:
+        parser = LatexParser(latex_input)
+        # AST 생성
+        ast_root = parser.parse_full()
+        # AST를 사람이 읽기 쉬운 문자열로 변환 (Expression.__str__ 사용)
+        human_readable_latex = str(ast_root)
+        
+        # Streamlit의 st.latex는 LaTeX 코드를 렌더링하여 보여줍니다.
+        # 
+        st.latex(latex_input)
+        
+        # 파싱 결과를 일반 텍스트로도 보여줄 수 있습니다.
+        st.caption(f"파싱된 내부 구조 (Repr): {repr(ast_root)}")
+
+    except Exception as e:
+        # 파싱 오류 시에는 오류 메시지 출력
+        st.error(f"❌ 수식 파싱 오류: {e}")
+else:
+    st.info("수식을 입력하면 여기에 일반 수식 미리보기가 나타납니다.")
+
+st.markdown("---")
+st.subheader("음성 변환 및 재생")
 # 변환을 시작하는 버튼을 만듭니다.
 if st.button("🔊 음성 변환 및 재생 시작"):
     
