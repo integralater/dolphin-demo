@@ -4,3 +4,4 @@ pydub
 numpy
 imageio-ffmpeg
 matplotlib
+ipython
