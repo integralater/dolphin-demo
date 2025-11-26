@@ -63,7 +63,7 @@ if latex_input.strip():
         expr = latex_to_expression(latex_input)
         
         # 2. 한국어 텍스트 변환 (핵심 함수 2)
-        korean_text = expression_to_korean(expr)
+        korean_text = expression_to_korean(expr, is_naive = is_naive)
         
         # [오른쪽 컬럼] 변환된 한국어 텍스트 표시 (사용자 경험 개선)
         with col2:
@@ -101,7 +101,7 @@ if latex_input.strip():
                 
                 elif style_option == "grouping version":
                     latex_audio_grouping_pitch(expr)
-                    
+
                     
                 
                 # 재생 및 다운로드 UI
