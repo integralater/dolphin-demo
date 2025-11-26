@@ -16,10 +16,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 '''
-# ----------------- B. 사이드바 옵션 설정 -----------------
+----------------- B. 사이드바 옵션 설정 -----------------
 st.sidebar.title("🎛️ 옵션 설정")
 
-# 1. 발음 스타일 선택
+1. 발음 스타일 선택
 style_option = st.sidebar.selectbox(
     "발음 스타일 (Style)",
     ("Simple", "Flat", "Expressive", "Hierarchical"),
@@ -27,7 +27,7 @@ style_option = st.sidebar.selectbox(
     help="Simple: 높낮이 없음\nExpressive: 깊이에 따른 자연스러운 피치\nHierarchical: 구조 강조형"
 )
 
-# 2. 구어체 모드 선택
+2. 구어체 모드 선택
 is_naive = st.sidebar.checkbox(
     "구어체 모드 (Casual)",
     value=True,
