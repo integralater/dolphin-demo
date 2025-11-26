@@ -67,35 +67,6 @@ if latex_input.strip():
                 output_path = tmp_file.name
 
             try:
-                '''
-                # 스타일별 분기 처리 (가이드라인 '음원 생성 방법' 참조)
-                if style_option == "Simple":
-                    # gTTS 직접 사용 (피치 변화 없음)
-                    tts = gTTS(text=korean_text, lang='ko')
-                    tts.save(output_path)
-                
-                elif style_option == "Flat":
-                    # gTTS Slow 모드 사용
-                    # Flat 모드는 보통 형식적(is_naive=False) 텍스트를 선호하므로 재변환 고려 가능
-                    tts = gTTS(text=korean_text, lang='ko', slow=True)
-                    tts.save(output_path)
-                
-                elif style_option == "Expressive":
-                    # MathSpeechSynthesizer 기본 정책 사용 (피치 변조 적용)
-                    synthesizer = MathSpeechSynthesizer()
-                    synthesizer.save(expr, output_path=output_path)
-                
-                elif style_option == "Hierarchical":
-                    # AudioPolicy 커스텀 (깊이감 극대화)
-                    hier_policy = AudioPolicy(
-                        emph_space_ms=650,
-                        speech_rate=0.9,
-                        pitch_increase_2=210.0, # 깊이 2에서 A3 음
-                        pitch_decrease_2=340.0
-                    )
-                    synthesizer = MathSpeechSynthesizer(policy=hier_policy)
-                    synthesizer.save(expr, output_path=output_path)
-                '''
                 synthesizer = MathSpeechSynthesizer()
                 synthesizer.save(expr, output_path=output_path)
                 
