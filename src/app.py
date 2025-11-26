@@ -15,7 +15,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
+'''
 # ----------------- B. 사이드바 옵션 설정 -----------------
 st.sidebar.title("🎛️ 옵션 설정")
 
@@ -37,10 +37,10 @@ is_naive = st.sidebar.checkbox(
 st.sidebar.markdown("---")
 st.sidebar.info("Dolphin-doing-Math Project\nLatex to Korean Speech")
 
-
+'''
 # ----------------- C. 메인 화면 구성 -----------------
 st.title("🔢 LaTeX 수식 음성 합성 데모")
-st.markdown(f"현재 설정: **{style_option}** 스타일 | **{'구어체' if is_naive else '형식적'}** 모드")
+#st.markdown(f"현재 설정: **{style_option}** 스타일 | **{'구어체' if is_naive else '형식적'}** 모드")
 
 # 입력창
 latex_input = st.text_area(
@@ -55,7 +55,7 @@ if latex_input.strip():
     
     # [왼쪽 컬럼] 수식 렌더링
     with col1:
-        st.subheader("👁️ 수식 미리보기")
+        st.subheader("수식 미리보기")
         st.latex(latex_input)
 
     # 파싱 및 텍스트 변환 시도
@@ -64,11 +64,11 @@ if latex_input.strip():
         expr = latex_to_expression(latex_input)
         
         # 2. 한국어 텍스트 변환 (핵심 함수 2)
-        korean_text = expression_to_korean(expr, is_naive=is_naive)
+        korean_text = expression_to_korean(expr)
         
         # [오른쪽 컬럼] 변환된 한국어 텍스트 표시 (사용자 경험 개선)
         with col2:
-            st.subheader("🇰🇷 한국어 발음 텍스트")
+            st.subheader("한국어 발음 텍스트")
             st.info(korean_text)
             
         # 내부 구조 디버깅용 (필요 시 확장)
@@ -83,13 +83,14 @@ if latex_input.strip():
 
     # ----------------- E. 음성 변환 및 재생 버튼 -----------------
     if st.button("🔊 음성 변환 및 재생", type="primary"):
-        with st.spinner(f"'{style_option}' 스타일로 음성을 생성 중입니다..."):
+        with st.spinner(f"=음성을 생성 중입니다..."):
             
             # 임시 파일 생성
             with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_file:
                 output_path = tmp_file.name
 
             try:
+                '''
                 # 스타일별 분기 처리 (가이드라인 '음원 생성 방법' 참조)
                 if style_option == "Simple":
                     # gTTS 직접 사용 (피치 변화 없음)
@@ -117,7 +118,10 @@ if latex_input.strip():
                     )
                     synthesizer = MathSpeechSynthesizer(policy=hier_policy)
                     synthesizer.save(expr, output_path=output_path)
-
+                '''
+                synthesizer = MathSpeechSynthesizer()
+                synthesizer.save(expr, output_path=output_path)
+                
                 # 재생 및 다운로드 UI
                 st.success("생성 완료!")
                 st.audio(output_path, format='audio/mp3')
