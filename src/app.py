@@ -67,8 +67,8 @@ if latex_input.strip():
                 output_path = tmp_file.name
 
             try:
-                synthesizer = MathSpeechSynthesizer()
-                synthesizer.save(expr, output_path=output_path)
+                tts = gTTS(text=korean_text, lang='ko')
+                tts.save(output_path)
                 
                 # 재생 및 다운로드 UI
                 st.success("생성 완료!")
