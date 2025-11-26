@@ -1,4 +1,9 @@
 from Expression_Syntax import *
+from LaTeX_Parser import *
+from speech_synthesizer import *
+from gtts_expr_audio_pitch import *
+from audio_pitch import *
+from grouping_pitch import *
 
 # =========================================================
 # Token
@@ -3159,49 +3164,3 @@ def run_range_tests(start: int, end: int):
 
     print("=" * 80)
     print(f"Range {start}-{end}: {passed} PASSED, {failed} FAILED")
-
-
-if __name__ == "__main__":
-    import sys
-
-    if len(sys.argv) > 1:
-        cmd = sys.argv[1]
-
-        if cmd == "all":
-            run_tests()
-        elif cmd == "single" and len(sys.argv) > 2:
-            test_num = int(sys.argv[2])
-            run_single_test(test_num)
-        elif cmd == "range" and len(sys.argv) > 3:
-            start = int(sys.argv[2])
-            end = int(sys.argv[3])
-            run_range_tests(start, end)
-        else:
-            print("Usage:")
-            print("  python test_100_cases.py all")
-            print("  python test_100_cases.py single <test_number>")
-            print("  python test_100_cases.py range <start> <end>")
-    else:
-        print("LaTeX Parser - 100 Test Cases")
-        print()
-        print("Usage:")
-        print("  python test_100_cases.py all           # Run all 100 tests")
-        print("  python test_100_cases.py single 42     # Run test #42 only")
-        print("  python test_100_cases.py range 1 20    # Run tests 1-20")
-        print()
-        print("Test cases available: 1-100")
-        print()
-        print("Categories:")
-        print("  1-10:   Basic Operations")
-        print("  11-20:  Slightly More Complex")
-        print("  21-30:  Intermediate Complexity")
-        print("  31-40:  Sets and Logic")
-        print("  41-50:  Functions and Sequences")
-        print("  51-60:  Trigonometry and Advanced Functions")
-        print("  61-70:  Geometry and Vectors")
-        print("  71-80:  Complex Expressions")
-        print("  81-90:  Very Complex Expressions")
-        print("  91-100: Most Complex")
-
-if __name__ == "__main__":
-    run_tests()

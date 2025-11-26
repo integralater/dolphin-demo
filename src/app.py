@@ -8,6 +8,9 @@ import time # 로딩 표시를 위해 추가
 from Expression_Syntax import *
 from LaTeX_Parser import *
 from gtts_expr_audio_pitch import *
+from audio_pitch import *
+from speech_synthesizer import *
+from grouping_pitch import *
 
 # ----------------- A. 페이지 설정 -----------------
 st.set_page_config(

@@ -5771,7 +5771,7 @@ def expression_to_tokens_with_pitch(expr, d=0, in_condition=False, is_naive=Fals
 
     # 정의되지 않은 경우
     return [(str(expr), d, 0)]
-
+'''
 grouping_pitch_test_cases=[
   {
     "id": 1,
@@ -6495,3 +6495,4 @@ def test_grouping_pitch_cases():
 
 if __name__ == "__main__":
     test_grouping_pitch_cases()
+'''
