@@ -1,4 +1,4 @@
-from LaTeX_Parser import latex_to_expression, synthesizer
+from LaTeX_Parser import latex_to_expression
 from Expression_Syntax import expression_to_korean, expression_to_tokens_with_pitch
 from speech_synthesizer import MathSpeechSynthesizer
 from gtts_expr_audio_pitch import AudioPolicy
