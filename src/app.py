@@ -15,29 +15,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-'''
------------------ B. 사이드바 옵션 설정 -----------------
-st.sidebar.title("🎛️ 옵션 설정")
-
-1. 발음 스타일 선택
-style_option = st.sidebar.selectbox(
-    "발음 스타일 (Style)",
-    ("Simple", "Flat", "Expressive", "Hierarchical"),
-    index=2, # 기본값: Expressive
-    help="Simple: 높낮이 없음\nExpressive: 깊이에 따른 자연스러운 피치\nHierarchical: 구조 강조형"
-)
-
-2. 구어체 모드 선택
-is_naive = st.sidebar.checkbox(
-    "구어체 모드 (Casual)",
-    value=True,
-    help="체크 시: '이 분의 일' (자연스러움)\n해제 시: 형식적인 수학 표현"
-)
-
-st.sidebar.markdown("---")
-st.sidebar.info("Dolphin-doing-Math Project\nLatex to Korean Speech")
-
-'''
 # ----------------- C. 메인 화면 구성 -----------------
 st.title("🔢 LaTeX 수식 음성 합성 데모")
 #st.markdown(f"현재 설정: **{style_option}** 스타일 | **{'구어체' if is_naive else '형식적'}** 모드")
