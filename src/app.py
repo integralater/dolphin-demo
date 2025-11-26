@@ -78,7 +78,7 @@ if st.button("🔊 음성 변환 및 재생 시작"):
                 try:
                     # 핵심 함수 호출 (이 함수가 10단계 알고리즘을 실행합니다)
                     final_output_path = latex_audio_grouping_pitch(
-                        latex_str=latex_input,
+                        latex_input,
                         output_dir=tmpdir,
                         filename=temp_filename
                     )
