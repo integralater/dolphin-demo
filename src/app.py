@@ -1,106 +1,139 @@
-# app.py 파일 내용
-
 import streamlit as st
 import os
 import tempfile
-import time # 로딩 표시를 위해 추가
-# 1단계에서 분리한 핵심 로직을 가져옵니다.
-from Expression_Syntax import *
-from LaTeX_Parser import *
-from gtts_expr_audio_pitch import *
-from audio_pitch import *
-from speech_synthesizer import *
-from grouping_pitch import *
+from gtts import gTTS
+
+# 가이드라인에 명시된 핵심 모듈 임포트
+from LaTeX_Parser import latex_to_expression
+from Expression_Syntax import expression_to_korean
+from speech_synthesizer import MathSpeechSynthesizer
+from gtts_expr_audio_pitch import AudioPolicy
 
 # ----------------- A. 페이지 설정 -----------------
 st.set_page_config(
-    page_title="LaTeX 음성 변환 데모", # 브라우저 탭에 표시되는 제목
-    layout="wide"
+    page_title="Dolphin Math TTS",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# ----------------- B. 제목 및 설명 (정적인 부분) -----------------
-st.title("🔢 LaTeX 수식 음성 변환 데모")
-st.markdown("수식 **구조적 깊이**에 따라 피치(음높이)가 변조된 한국어 음성 파일을 생성합니다.")
-st.markdown("---")
+# ----------------- B. 사이드바 옵션 설정 -----------------
+st.sidebar.title("🎛️ 옵션 설정")
+
+# 1. 발음 스타일 선택
+style_option = st.sidebar.selectbox(
+    "발음 스타일 (Style)",
+    ("Simple", "Flat", "Expressive", "Hierarchical"),
+    index=2, # 기본값: Expressive
+    help="Simple: 높낮이 없음\nExpressive: 깊이에 따른 자연스러운 피치\nHierarchical: 구조 강조형"
+)
+
+# 2. 구어체 모드 선택
+is_naive = st.sidebar.checkbox(
+    "구어체 모드 (Casual)",
+    value=True,
+    help="체크 시: '이 분의 일' (자연스러움)\n해제 시: 형식적인 수학 표현"
+)
+
+st.sidebar.markdown("---")
+st.sidebar.info("Dolphin-doing-Math Project\nLatex to Korean Speech")
 
 
-# ----------------- C. 입력 위젯 만들기 -----------------
+# ----------------- C. 메인 화면 구성 -----------------
+st.title("🔢 LaTeX 수식 음성 합성 데모")
+st.markdown(f"현재 설정: **{style_option}** 스타일 | **{'구어체' if is_naive else '형식적'}** 모드")
 
-# 사용자가 LaTeX 코드를 입력할 수 있는 큰 텍스트 상자를 만듭니다.
+# 입력창
 latex_input = st.text_area(
-    "여기에 LaTeX 수식을 입력하세요:",
-    value=r"\sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}", # 기본 예시 수식
-    height=150
+    "LaTeX 수식을 입력하세요:",
+    value=r"\sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}",
+    height=120
 )
 
-st.subheader("일반 수식 표기 (실시간 미리보기)")
-
+# ----------------- D. 실시간 분석 및 변환 로직 -----------------
 if latex_input.strip():
-    # 📌 실시간 변환 로직 (버튼 클릭과 무관하게 실행됨)
-    try:
-        parser = LatexParser(latex_input)
-        # AST 생성
-        ast_root = parser.parse_full()
-        # AST를 사람이 읽기 쉬운 문자열로 변환 (Expression.__str__ 사용)
-        human_readable_latex = str(ast_root)
-        
-        # Streamlit의 st.latex는 LaTeX 코드를 렌더링하여 보여줍니다.
-        # 
+    col1, col2 = st.columns(2)
+    
+    # [왼쪽 컬럼] 수식 렌더링
+    with col1:
+        st.subheader("👁️ 수식 미리보기")
         st.latex(latex_input)
+
+    # 파싱 및 텍스트 변환 시도
+    try:
+        # 1. LaTeX 파싱 (핵심 함수 1)
+        expr = latex_to_expression(latex_input)
         
-        # 파싱 결과를 일반 텍스트로도 보여줄 수 있습니다.
-        st.text(f"파싱된 내부 구조 (Repr): {repr(ast_root)}")
+        # 2. 한국어 텍스트 변환 (핵심 함수 2)
+        korean_text = expression_to_korean(expr, is_naive=is_naive)
+        
+        # [오른쪽 컬럼] 변환된 한국어 텍스트 표시 (사용자 경험 개선)
+        with col2:
+            st.subheader("🇰🇷 한국어 발음 텍스트")
+            st.info(korean_text)
+            
+        # 내부 구조 디버깅용 (필요 시 확장)
+        with st.expander("개발자용: 내부 AST 구조 확인"):
+            st.text(repr(expr))
 
     except Exception as e:
-        # 파싱 오류 시에는 오류 메시지 출력
-        st.error(f"❌ 수식 파싱 오류: {e}")
-else:
-    st.info("수식을 입력하면 여기에 일반 수식 미리보기가 나타납니다.")
+        st.error(f"LaTeX 파싱 오류: {e}")
+        st.stop() # 오류 발생 시 아래 로직 중단
 
-st.markdown("---")
-st.subheader("음성 변환 및 재생")
-# 변환을 시작하는 버튼을 만듭니다.
-if st.button("🔊 음성 변환 및 재생 시작"):
-    
-    if not latex_input.strip():
-        st.error("LaTeX 수식을 입력해주세요!")
-    else:
-        # st.spinner를 사용하면 변환 중이라는 로딩 애니메이션이 표시됩니다.
-        with st.spinner('변환 중... (gTTS 음성 합성 및 오디오 변조 작업 진행)'):
+    st.markdown("---")
+
+    # ----------------- E. 음성 변환 및 재생 버튼 -----------------
+    if st.button("🔊 음성 변환 및 재생", type="primary"):
+        with st.spinner(f"'{style_option}' 스타일로 음성을 생성 중입니다..."):
             
-            # ----------------- D. 핵심 로직 실행 (4단계 알고리즘) -----------------
-            
-            # 임시 디렉토리를 만들어 오디오 파일을 저장합니다.
-            with tempfile.TemporaryDirectory() as tmpdir:
-                temp_filename = "output_audio.mp3"
-                temp_filepath = os.path.join(tmpdir, temp_filename)
+            # 임시 파일 생성
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_file:
+                output_path = tmp_file.name
+
+            try:
+                # 스타일별 분기 처리 (가이드라인 '음원 생성 방법' 참조)
+                if style_option == "Simple":
+                    # gTTS 직접 사용 (피치 변화 없음)
+                    tts = gTTS(text=korean_text, lang='ko')
+                    tts.save(output_path)
                 
-                try:
-                    # 핵심 함수 호출 (이 함수가 10단계 알고리즘을 실행합니다)
-                    final_output_path = latex_audio_grouping_pitch(
-                        latex_input,
-                        output_dir=tmpdir,
-                        filename=temp_filename
+                elif style_option == "Flat":
+                    # gTTS Slow 모드 사용
+                    # Flat 모드는 보통 형식적(is_naive=False) 텍스트를 선호하므로 재변환 고려 가능
+                    tts = gTTS(text=korean_text, lang='ko', slow=True)
+                    tts.save(output_path)
+                
+                elif style_option == "Expressive":
+                    # MathSpeechSynthesizer 기본 정책 사용 (피치 변조 적용)
+                    synthesizer = MathSpeechSynthesizer()
+                    synthesizer.save(expr, output_path=output_path)
+                
+                elif style_option == "Hierarchical":
+                    # AudioPolicy 커스텀 (깊이감 극대화)
+                    hier_policy = AudioPolicy(
+                        emph_space_ms=650,
+                        speech_rate=0.9,
+                        pitch_increase_2=210.0, # 깊이 2에서 A3 음
+                        pitch_decrease_2=340.0
                     )
-                    
-                    # ----------------- E. 결과 표시 (오디오 재생) -----------------
-                    
-                    st.success("✅ 음성 변환 완료! 아래에서 재생하세요.")
-                    
-                    # Streamlit 내장 오디오 플레이어 위젯
-                    st.audio(final_output_path, format='audio/mp3')
-                    
-                    # 다운로드 버튼
-                    with open(final_output_path, "rb") as file:
-                        st.download_button(
-                            label="⬇️ MP3 파일 다운로드",
-                            data=file,
-                            file_name="math_audio.mp3",
-                            mime="audio/mp3"
-                        )
+                    synthesizer = MathSpeechSynthesizer(policy=hier_policy)
+                    synthesizer.save(expr, output_path=output_path)
 
-                except Exception as e:
-                    # 에러가 발생했을 때 사용자에게 알립니다.
-                    st.error(f"❌ 변환 중 오류가 발생했습니다. 수식 형식을 확인해 주세요: {e}")
-                    # 개발자를 위해 상세 에러 내용도 출력
-                    st.exception(e)
+                # 재생 및 다운로드 UI
+                st.success("생성 완료!")
+                st.audio(output_path, format='audio/mp3')
+                
+                with open(output_path, "rb") as file:
+                    st.download_button(
+                        label="⬇️ MP3 다운로드",
+                        data=file,
+                        file_name="math_speech.mp3",
+                        mime="audio/mp3"
+                    )
+                
+                # 임시 파일 정리 (선택 사항)
+                # os.remove(output_path) 
+
+            except Exception as e:
+                st.error(f"음성 합성 중 오류 발생: {e}")
+else:
+    st.info("수식을 입력하면 미리보기와 변환 결과가 나타납니다.")
