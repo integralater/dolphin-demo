@@ -1052,18 +1052,19 @@ class Prop(Expression):
 class FuncDef(Expression):
     """함수 정의를 표현하는 클래스"""
 
-    def __init__(self, func: Expression, mapping: Expression):
+    def __init__(self, func: Expression, domain: Expression, codomain: Expression):
         self.func = func
-        self.mapping = mapping
+        self.domain = domain
+        self.codomain = codomain
 
     def __str__(self) -> str:
-        return f"{self.func}:{self.mapping}"
+        return f"{self.func}:{self.domain}→{self.codomain}"
 
     def to_tree_node(self) -> dict:
-        return {"label": "FuncDef", "children": [self.func.to_tree_node(), self.mapping.to_tree_node()]}
+        return {"label": "FuncDef", "children": [self.func.to_tree_node(), self.domain.to_tree_node(), self.codomain.to_tree_node()]}
 
     def _repr_helper(self) -> str:
-        return f"FuncDef({self.func._repr_helper()}, {self.mapping._repr_helper()})"
+        return f"FuncDef({self.func._repr_helper()}, {self.domain._repr_helper()}, {self.codomain._repr_helper()})"
 
 class Perm(Expression):
     """순열을 표현하는 클래스"""
@@ -2504,10 +2505,13 @@ def expression_to_korean(expr, is_nested=False, is_naive=False):
         return f"명제 {expression_to_korean(expr.symbol, is_naive=is_naive)} {expression_to_korean(expr.statement, is_naive=is_naive)}"
     if isinstance(expr, FuncDef):
         func = expression_to_korean(expr.func, is_naive=is_naive)
-        particles = get_particle(func)
-        mapping = expression_to_korean(expr.mapping, is_naive=is_naive)
-        mapping_particles = get_particle(mapping)
-        return f"함수 {func}{particles[0]} {mapping}{mapping_particles[4]} 가는 함수"
+        domain = expression_to_korean(expr.domain, is_naive=is_naive)
+        codomain = expression_to_korean(expr.codomain, is_naive=is_naive)
+        nen, _, _, _, euro_codomain = get_particle(func)[0], *get_particle(func)[1:]
+        # codomain 뒤에는 '로/으로' 필요
+        euro = get_particle(codomain)[4]
+        return f"함수 {func}{get_particle(func)[0]} {domain}에서 {codomain}{euro} 가는 함수"
+
     if isinstance(expr, Perm):
         return f"순열 {expression_to_korean(expr.n, is_naive=is_naive)} 피 {expression_to_korean(expr.r, is_naive=is_naive)}"
     if isinstance(expr, Comb):
@@ -2705,16 +2709,16 @@ def expression_to_korean(expr, is_nested=False, is_naive=False):
 
     # ================== 구간 ==================
     if isinstance(expr, ClosedInterval):
-        return f"구간 {expression_to_korean(expr.left, is_naive=is_naive)} 초과 {expression_to_korean(expr.right, is_naive=is_naive)} 미만"
+        return f"구간 {expression_to_korean(expr.left, is_naive=is_naive)} 이상 {expression_to_korean(expr.right, is_naive=is_naive)} 이하"
 
     if isinstance(expr, ClosedOpenInterval):
-        return f"구간 {expression_to_korean(expr.left, is_naive=is_naive)} 초과 {expression_to_korean(expr.right, is_naive=is_naive)} 이하"    
+        return f"구간 {expression_to_korean(expr.left, is_naive=is_naive)} 이상 {expression_to_korean(expr.right, is_naive=is_naive)} 미만"
 
     if isinstance(expr, OpenClosedInterval):
-        return f"구간 {expression_to_korean(expr.left, is_naive=is_naive)} 이상 {expression_to_korean(expr.right, is_naive=is_naive)} 미만"  
+        return f"구간 {expression_to_korean(expr.left, is_naive=is_naive)} 초과 {expression_to_korean(expr.right, is_naive=is_naive)} 이하"
 
     if isinstance(expr, OpenInterval):
-        return f"구간 {expression_to_korean(expr.left, is_naive=is_naive)} 이상 {expression_to_korean(expr.right, is_naive=is_naive)} 이하" 
+        return f"구간 {expression_to_korean(expr.left, is_naive=is_naive)} 초과 {expression_to_korean(expr.right, is_naive=is_naive)} 미만"
     
     # 삼각함수
     if isinstance(expr, Sin):
@@ -3414,17 +3418,34 @@ def expression_to_korean_with_depth(expr, depth=0, is_nested=False, is_naive=Fal
         return result
 
     if isinstance(expr, FuncDef):
-        func_tokens = expression_to_korean_with_depth(expr.func, depth+1, is_naive=is_naive)
+        result = []
         result.append(("함수", depth))
+
+        func_tokens = expression_to_korean_with_depth(expr.func, depth + 1, is_naive=is_naive)
         result.extend(func_tokens)
+
         if func_tokens:
             head = pick_head_for_particle(func_tokens)
             result.append((get_particle(head)[0], depth))  # 은/는
-        mapping_tokens = expression_to_korean_with_depth(expr.mapping, depth+1, is_naive=is_naive)
-        result.extend(mapping_tokens)
-        if mapping_tokens:
-            head = pick_head_for_particle(mapping_tokens)
+        else:
+            result.append(("는", depth))
+        # 정의역: X
+        domain_tokens = expression_to_korean_with_depth(expr.domain, depth + 1, is_naive=is_naive)
+        result.extend(domain_tokens)
+
+        result.append(("에서", depth))
+
+        # 공역: Y
+        codomain_tokens = expression_to_korean_with_depth(expr.codomain, depth + 1, is_naive=is_naive)
+        result.extend(codomain_tokens)
+        # codomain 뒤 '로/으로'
+        if codomain_tokens:
+            head = pick_head_for_particle(codomain_tokens)
             result.append((get_particle(head)[4], depth))  # 으로/로
+        else:
+            result.append(("으로", depth))
+
+        # 마무리
         result.append(("가는", depth))
         result.append(("함수", depth))
         return result
@@ -3647,28 +3668,28 @@ def expression_to_korean_with_depth(expr, depth=0, is_nested=False, is_naive=Fal
     # ================== 구간 ==================
     if isinstance(expr, ClosedInterval):
         result.extend(expression_to_korean_with_depth(expr.left, depth+1, is_naive=is_naive))
-        result.append(("초과", depth))
+        result.append(("이상", depth))
+        result.extend(expression_to_korean_with_depth(expr.right, depth+1, is_naive=is_naive))
+        result.append(("이하", depth))        
+        return result
+
+    if isinstance(expr, ClosedOpenInterval):
+        result.extend(expression_to_korean_with_depth(expr.left, depth+1, is_naive=is_naive))
+        result.append(("이상", depth))
         result.extend(expression_to_korean_with_depth(expr.right, depth+1, is_naive=is_naive))
         result.append(("미만", depth))        
         return result
 
-    if isinstance(expr, ClosedOpenInterval):
+    if isinstance(expr, OpenClosedInterval):
         result.extend(expression_to_korean_with_depth(expr.left, depth+1, is_naive=is_naive))
         result.append(("초과", depth))
         result.extend(expression_to_korean_with_depth(expr.right, depth+1, is_naive=is_naive))
         result.append(("이하", depth))        
         return result
 
-    if isinstance(expr, OpenClosedInterval):
-        result.extend(expression_to_korean_with_depth(expr.left, depth+1, is_naive=is_naive))
-        result.append(("이상", depth))
-        result.extend(expression_to_korean_with_depth(expr.right, depth+1, is_naive=is_naive))
-        result.append(("미만", depth))        
-        return result
-
     if isinstance(expr, OpenInterval):
         result.extend(expression_to_korean_with_depth(expr.left, depth+1, is_naive=is_naive))
-        result.append(("이상", depth))
+        result.append(("초과", depth))
         result.extend(expression_to_korean_with_depth(expr.right, depth+1, is_naive=is_naive))
         result.append(("미만", depth))        
         return result
@@ -4994,37 +5015,40 @@ def expression_to_tokens_with_pitch(expr, d=0, in_condition=False, is_naive=Fals
 
     if isinstance(expr, FuncDef):
         func = expr.func
-        mapping = expr.mapping
+        domain = expr.domain
+        codomain = expr.codomain
 
-        # "함수" + 함수 이름
         tokens.append(("함수", d, 0))
         func_tokens = expression_to_tokens_with_pitch(func, d, in_condition, is_naive)
         tokens.extend(func_tokens)
 
-        # 함수 이름에 맞는 "은/는"
         if func_tokens:
             func_head = func_tokens[-1][0]
-            nen, iga, reul, gwa, euro = get_particle(func_head)
+            nen = get_particle(func_head)[0]
         else:
-            nen, iga, reul, gwa, euro = ("는", "이", "을", "과", "으로")
-        tokens.append((nen, d, 0))   # 는/은
+            nen = "는"
+        tokens.append((nen, d, 0))
 
-        # 치역(또는 대응집합) 쪽 표현
-        mapping_tokens = expression_to_tokens_with_pitch(mapping, d, in_condition, is_naive)
-        tokens.extend(mapping_tokens)
+        domain_tokens = expression_to_tokens_with_pitch(domain, d, in_condition, is_naive)
+        tokens.extend(domain_tokens)
 
-        # mapping 뒤에 붙일 "으로/로"
-        if mapping_tokens:
-            mapping_head = mapping_tokens[-1][0]
-            _, _, _, _, euro2 = get_particle(mapping_head)
+        tokens.append(("에서", d, 0))
+
+        # 공역 Y
+        codomain_tokens = expression_to_tokens_with_pitch(codomain, d, in_condition, is_naive)
+        tokens.extend(codomain_tokens)
+
+        # codomain 뒤 "로/으로"
+        if codomain_tokens:
+            codomain_head = codomain_tokens[-1][0]
+            euro2 = get_particle(codomain_head)[4]
         else:
             euro2 = "으로"
-        tokens.append((euro2, d, 0))  # 으로/로
+        tokens.append((euro2, d, 0))
 
         tokens.append(("가는", d, 0))
         tokens.append(("함수", d, 0))
         return tokens
-
 
     # ==================== 함수 ====================
 
@@ -5334,23 +5358,23 @@ def expression_to_tokens_with_pitch(expr, d=0, in_condition=False, is_naive=Fals
 
     if isinstance(expr, ClosedOpenInterval):
         tokens.extend(expression_to_tokens_with_pitch(expr.left, d, in_condition, is_naive))
-        tokens.append(("초과", d, 0))
+        tokens.append(("이상", d, 0))
         tokens.extend(expression_to_tokens_with_pitch(expr.right, d, in_condition, is_naive))
         tokens.append(("이하", d, 0))        
         return tokens
 
     if isinstance(expr, OpenClosedInterval):
         tokens.extend(expression_to_tokens_with_pitch(expr.left, d, in_condition, is_naive))
-        tokens.append(("이상", d, 0))
+        tokens.append(("초과", d, 0))
         tokens.extend(expression_to_tokens_with_pitch(expr.right, d, in_condition, is_naive))
-        tokens.append(("미만", d, 0))        
+        tokens.append(("이하", d, 0))        
         return tokens
 
     if isinstance(expr, OpenInterval):
         tokens.extend(expression_to_tokens_with_pitch(expr.left, d, in_condition, is_naive))
-        tokens.append(("이상", d, 0))
+        tokens.append(("초과", d, 0))
         tokens.extend(expression_to_tokens_with_pitch(expr.right, d, in_condition, is_naive))
-        tokens.append(("이하", d, 0))        
+        tokens.append(("미만", d, 0))        
         return tokens
 
 
@@ -5771,7 +5795,7 @@ def expression_to_tokens_with_pitch(expr, d=0, in_condition=False, is_naive=Fals
 
     # 정의되지 않은 경우
     return [(str(expr), d, 0)]
-'''
+
 grouping_pitch_test_cases=[
   {
     "id": 1,
@@ -6495,4 +6519,3 @@ def test_grouping_pitch_cases():
 
 if __name__ == "__main__":
     test_grouping_pitch_cases()
-'''

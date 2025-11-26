@@ -5,9 +5,10 @@ from gtts import gTTS
 
 # 가이드라인에 명시된 핵심 모듈 임포트
 from LaTeX_Parser import latex_to_expression
-from Expression_Syntax import expression_to_korean
+from Expression_Syntax import expression_to_korean, expression_to_tokens_with_pitch
 from speech_synthesizer import MathSpeechSynthesizer
 from gtts_expr_audio_pitch import AudioPolicy
+from grouping_pitch import latex_audio_grouping_pitch
 
 # ----------------- A. 페이지 설정 -----------------
 st.set_page_config(
@@ -15,6 +16,27 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+# ----------------- B. 사이드바 옵션 설정 -----------------
+st.sidebar.title("🎛️ 옵션 설정")
+
+# 1. 발음 스타일 선택
+style_option = st.sidebar.selectbox(
+    "발음 스타일 (Style)",
+    ("non-pitch change", "depth version", "grouping version"),
+    index=2, # 기본값: Expressive
+    help="non-pitch changle: 높낮이 없음\nepth version: d 자연스러운 피치\nHierarchical: 구조 강조형"
+)
+
+# 2. 구어체 모드 선택
+is_naive = st.sidebar.checkbox(
+    "구어체 모드 (Casual)",
+    value=True,
+    help="체크 시: '이 분의 일' (자연스러움)\n해제 시: 형식적인 수학 표현"
+)
+
+st.sidebar.markdown("---")
+st.sidebar.info("Dolphin-doing-Math Project\nLatex to Korean Speech")
+
 # ----------------- C. 메인 화면 구성 -----------------
 st.title("🔢 LaTeX 수식 음성 합성 데모")
 #st.markdown(f"현재 설정: **{style_option}** 스타일 | **{'구어체' if is_naive else '형식적'}** 모드")
@@ -66,9 +88,21 @@ if latex_input.strip():
             with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_file:
                 output_path = tmp_file.name
 
-            try:
-                tts = gTTS(text=korean_text, lang='ko')
-                tts.save(output_path)
+            try:# 스타일별 분기 처리 (가이드라인 '음원 생성 방법' 참조)
+                if style_option == "non-pitch change":
+                    # gTTS 직접 사용 (피치 변화 없음)
+                    tts = gTTS(text=korean_text, lang='ko')
+                    tts.save(output_path)
+                               
+                elif style_option == "depth version":
+                    # MathSpeechSynthesizer 기본 정책 사용 (피치 변조 적용)
+                    synthesizer = MathSpeechSynthesizer()
+                    synthesizer.save(expr, output_path=output_path)
+                
+                elif style_option == "grouping version":
+                    latex_audio_grouping_pitch(expr)
+                    
+                    
                 
                 # 재생 및 다운로드 UI
                 st.success("생성 완료!")

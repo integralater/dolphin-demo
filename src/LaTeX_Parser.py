@@ -294,6 +294,31 @@ class LatexParser:
     # =========================================================
 
     def parse_equation_chain(self) -> Expression:
+        """관계/서술 연산자 파싱"""
+        # --- 함수정의 특수 패턴:  func : domain  \to codomain  ---
+        colon_idx, arrow_idx = self._scan_funcdef_colon_arrow()
+        if colon_idx is not None and arrow_idx is not None:
+            old_pos, old_limit = self.pos, self.limit
+
+            # func = [pos, colon_idx)
+            self.limit = colon_idx
+            func = self.parse_ratio_chain()   # 함수 이름 자리: 식 전체 허용
+            # ':' consume
+            self.pos = colon_idx + 1
+
+            # domain = (colon_idx, arrow_idx)
+            self.limit = arrow_idx
+            domain = self.parse_ratio_chain()
+            # '\to' / '\rightarrow' consume
+            self.pos = arrow_idx + 1
+
+            # codomain = [arrow_idx+1, 원래 limit)
+            self.limit = old_limit
+            codomain = self.parse_ratio_chain()
+
+            return FuncDef(func, domain, codomain)
+
+
         left = self.parse_ratio_chain()
         rels: list[tuple[str, Expression]] = []
 
@@ -877,6 +902,58 @@ class LatexParser:
         return Power(Subscript(Value(base_cmd), lower), upper)
 
     # =========================================================
+    # f: X\to Y 함수정의 스캔
+    # =========================================================
+
+    def _scan_funcdef_colon_arrow(self):
+        """
+        현재 self.pos부터 토큰을 훑어 최상위 ':' 와 그 뒤 최상위 '\to' 또는 '\rightarrow'를 찾는다.
+        찾으면 (colon_idx, arrow_idx) 반환, 없으면 (None, None).
+        """
+        depth_paren = depth_brace = depth_square = 0
+        colon_idx = None
+
+        i = self.pos
+        while i < self.limit:
+            t = self.tokens[i]
+
+            # 괄호 깊이 추적
+            if t.kind == "SYM":
+                if t.value == "(":
+                    depth_paren += 1
+                elif t.value == ")":
+                    if depth_paren > 0: depth_paren -= 1
+                elif t.value == "{":
+                    depth_brace += 1
+                elif t.value == "}":
+                    if depth_brace > 0: depth_brace -= 1
+                elif t.value == "[":
+                    depth_square += 1
+                elif t.value == "]":
+                    if depth_square > 0: depth_square -= 1
+
+                # 최상위 콜론
+                elif t.value == ":" and depth_paren == depth_brace == depth_square == 0:
+                    colon_idx = i
+
+            elif t.kind == "CMD":
+                # \{, \}도 brace 취급
+                if t.value == r"\{":
+                    depth_brace += 1
+                elif t.value == r"\}":
+                    if depth_brace > 0: depth_brace -= 1
+                # 최상위 화살표
+                elif t.value in (r"\to", r"\rightarrow") and \
+                    depth_paren == depth_brace == depth_square == 0 and \
+                    colon_idx is not None:
+                    return colon_idx, i
+
+            i += 1
+
+        return None, None
+
+
+    # =========================================================
     # [ ... ] / [ ... )
     # =========================================================
 
@@ -970,6 +1047,9 @@ class LatexParser:
                         return i, has_paren, has_arith, has_comma_top, has_bar_or_colon_top
                 elif t.value in (r"\times", r"\cdot", r"\div"):
                     has_arith = True
+                elif t.value == r"\mid":
+                    if depth == 1 and depth_paren == 0:
+                        has_bar_or_colon_top = True                    
 
             if t.kind == "SYM":
                 if t.value == "(":
@@ -1687,8 +1767,8 @@ class LatexParser:
         first = self.parse_equation_chain()
         elems.append(first)
 
-        # 3) SetBuilder: \{ x | cond \}, \{ x : cond \}
-        if self.match("SYM", "|") or self.match("SYM", ":"):
+        # 3) SetBuilder: \{ x | cond \}, \{ x : cond \}, \{ x \mid cond \}
+        if self.match("SYM", "|") or self.match("SYM", ":") or self.match("CMD", r"\mid"):
             self.consume()
             cond = self.parse_equation_chain()
             cond = _to_inline_phrase(cond)
@@ -1736,12 +1816,14 @@ class LatexParser:
         first = self.parse_equation_chain()
         elems.append(first)
 
-        if self.match("SYM", "|") or self.match("SYM", ":"):
+        # SetBuilder in plain group: { x | cond }, { x : cond }, { x \mid cond }
+        if self.match("SYM", "|") or self.match("SYM", ":") or self.match("CMD", r"\mid"):
             self.consume()
             cond = self.parse_equation_chain()
             cond = _to_inline_phrase(cond)
             self.expect("SYM", "}")
             return SetBuilder(first, cond)
+
 
         while self.match("SYM", ","):
             self.consume()
@@ -2674,10 +2756,15 @@ def _rewrite_expression(expr: Expression, allow_interval: bool = False) -> Expre
 
     if isinstance(expr, FuncDef):
         return _finalize_expr(
-            FuncDef(_rewrite_expression(expr.func), _rewrite_expression(expr.mapping)),
+            FuncDef(
+                _rewrite_expression(expr.func),
+                _rewrite_expression(expr.domain, allow_interval=True),
+                _rewrite_expression(expr.codomain, allow_interval=True),
+            ),
             allow_interval,
         )
 
+    
     if isinstance(expr, Prop):
         return _finalize_expr(
             Prop(_rewrite_expression(expr.symbol), _rewrite_expression(expr.statement)),
@@ -3018,6 +3105,7 @@ test_cases = [
     (r" \bigcirc +\square =3", Eq( Add(BigCircle(), Square()) , Value(3)) ),
     (r"\pi \fallingdotseq 3.141592 \approx 3", Eq( Value("π"), About(Eq( Value(3.141592), About(Value(3))  )) ) ),
     (r"\frac{d}{dx} [f(x)]", Diff(Gauss(Func(Value("f"), [Value("x")])), Value("x"), Value(1)) ),
+    (r"f: X\to Y", FuncDef(Value("f"), Value("X"), Value("Y")) ),
 ]
 
 def normalize_repr(s: str) -> str:
@@ -3159,3 +3247,49 @@ def run_range_tests(start: int, end: int):
 
     print("=" * 80)
     print(f"Range {start}-{end}: {passed} PASSED, {failed} FAILED")
+
+
+if __name__ == "__main__":
+    import sys
+
+    if len(sys.argv) > 1:
+        cmd = sys.argv[1]
+
+        if cmd == "all":
+            run_tests()
+        elif cmd == "single" and len(sys.argv) > 2:
+            test_num = int(sys.argv[2])
+            run_single_test(test_num)
+        elif cmd == "range" and len(sys.argv) > 3:
+            start = int(sys.argv[2])
+            end = int(sys.argv[3])
+            run_range_tests(start, end)
+        else:
+            print("Usage:")
+            print("  python test_100_cases.py all")
+            print("  python test_100_cases.py single <test_number>")
+            print("  python test_100_cases.py range <start> <end>")
+    else:
+        print("LaTeX Parser - 100 Test Cases")
+        print()
+        print("Usage:")
+        print("  python test_100_cases.py all           # Run all 100 tests")
+        print("  python test_100_cases.py single 42     # Run test #42 only")
+        print("  python test_100_cases.py range 1 20    # Run tests 1-20")
+        print()
+        print("Test cases available: 1-100")
+        print()
+        print("Categories:")
+        print("  1-10:   Basic Operations")
+        print("  11-20:  Slightly More Complex")
+        print("  21-30:  Intermediate Complexity")
+        print("  31-40:  Sets and Logic")
+        print("  41-50:  Functions and Sequences")
+        print("  51-60:  Trigonometry and Advanced Functions")
+        print("  61-70:  Geometry and Vectors")
+        print("  71-80:  Complex Expressions")
+        print("  81-90:  Very Complex Expressions")
+        print("  91-100: Most Complex")
+
+if __name__ == "__main__":
+    run_tests()
