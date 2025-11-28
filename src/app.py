@@ -100,9 +100,7 @@ if latex_input.strip():
                     synthesizer.save(expr, output_path=output_path)
                 
                 elif style_option == "grouping version":
-                    latex_audio_grouping_pitch(expr)
-
-                    
+                    latex_audio_grouping_pitch(expr, output_path)
                 
                 # 재생 및 다운로드 UI
                 st.success("생성 완료!")
