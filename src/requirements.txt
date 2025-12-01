@@ -1,5 +1,6 @@
 streamlit
 gTTS
+python-audioop
 pydub
 numpy
 imageio-ffmpeg
