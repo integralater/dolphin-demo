@@ -147,11 +147,13 @@ synthesizer = PitchVolumeLevelSynthesizer()
 
 def latex_audio_grouping_pitch(expression, output_path="latex_to_audio/single_example"):
     tokens_pitch_volume = expression_to_tokens_with_pitch(expression)
-
+    '''
     token_display = [f"{tok}({lvl:+d})" for tok, lvl, _ in tokens_pitch_volume]
+    
     print("토큰:", " ".join(token_display))
 
     print("\n→ 음성 합성 중...", end=" ")
+    '''
     audio = synthesizer.synthesize(tokens_pitch_volume)
     
     synthesizer.save(audio, output_path)

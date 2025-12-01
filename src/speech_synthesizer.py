@@ -189,7 +189,7 @@ def save_expression(expr, output_path: str = "math_expression.mp3",
     synthesizer = MathSpeechSynthesizer(policy=policy)
     return synthesizer.save(expr, output_path)
 
-
+'''
 # ===== 사용 예시 =====
 if __name__ == "__main__":
     from Expression_Syntax import *
@@ -246,4 +246,4 @@ if __name__ == "__main__":
     print("모든 오디오 파일이 생성되었습니다!")
     print("각 파일을 들어보시고 depth 변화에 따른 피치 변조를 확인하세요.")
     print("=" * 60)
-
+'''

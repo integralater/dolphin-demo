@@ -3248,7 +3248,7 @@ def run_range_tests(start: int, end: int):
     print("=" * 80)
     print(f"Range {start}-{end}: {passed} PASSED, {failed} FAILED")
 
-
+'''
 if __name__ == "__main__":
     import sys
 
@@ -3293,3 +3293,4 @@ if __name__ == "__main__":
 
 if __name__ == "__main__":
     run_tests()
+    '''

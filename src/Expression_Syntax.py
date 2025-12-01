@@ -6517,5 +6517,7 @@ def test_grouping_pitch_cases():
 
     print(f"\n전체 통과: {passed_count}/{total_cases}")
 
+'''
 if __name__ == "__main__":
     test_grouping_pitch_cases()
+'''

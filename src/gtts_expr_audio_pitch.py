@@ -503,7 +503,7 @@ def save_tokens(tokens_with_depth: List[Tuple[str, int]],
     reader = ExpressionAudioReader(policy=policy)
     seg = reader.synthesize(tokens_with_depth)
     return reader.save(seg, out_path)
-
+'''
 # ===== 예시 =====
 if __name__ == "__main__":
     # 사용 예시
@@ -515,4 +515,4 @@ if __name__ == "__main__":
     # 파일 저장
     save_tokens(tokens, "expr.mp3", policy=AudioPolicy(speech_rate=1.0))
     print("✓ 오디오 파일 저장 완료: expr.mp3")
-
+'''
