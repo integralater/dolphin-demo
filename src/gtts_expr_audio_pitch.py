@@ -19,7 +19,19 @@ from gtts import gTTS
 from pydub import AudioSegment, effects
 from pydub.silence import detect_nonsilent
 from pydub import utils as pydub_utils
-from IPython.display import Audio, display
+
+# IPython.display는 선택적 임포트 (Jupyter/Colab 환경에서만 필요)
+try:
+    from IPython.display import Audio, display
+    IPYTHON_AVAILABLE = True
+except ImportError:
+    IPYTHON_AVAILABLE = False
+    # Streamlit 환경에서는 사용하지 않으므로 더미 객체 생성
+    class Audio:
+        def __init__(self, *args, **kwargs):
+            pass
+    def display(*args, **kwargs):
+        pass
 
 # ffmpeg 경로 설정 (imageio-ffmpeg 사용)
 import subprocess
