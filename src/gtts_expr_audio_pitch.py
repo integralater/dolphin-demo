@@ -16,43 +16,10 @@ from typing import List, Tuple, Optional, Sequence
 
 import numpy as np
 from gtts import gTTS
-
-# pydub의 audioop 의존성 문제 해결 (Python 3.13+)
-# pydub.utils가 audioop를 임포트하기 전에 더미 모듈을 생성
-import sys
-try:
-    import audioop
-except ImportError:
-    try:
-        import pyaudioop as audioop
-    except ImportError:
-        # audioop가 없으면 더미 모듈 생성
-        class DummyAudioop:
-            def __getattr__(self, name):
-                # pydub가 audioop를 선택적으로 사용하므로 더미 함수 반환
-                def dummy_func(*args, **kwargs):
-                    raise NotImplementedError(f"audioop.{name} is not available")
-                return dummy_func
-        audioop = DummyAudioop()
-        sys.modules['audioop'] = audioop
-        sys.modules['pyaudioop'] = audioop
-
 from pydub import AudioSegment, effects
 from pydub.silence import detect_nonsilent
 from pydub import utils as pydub_utils
-
-# IPython.display는 선택적 임포트 (Jupyter/Colab 환경에서만 필요)
-try:
-    from IPython.display import Audio, display
-    IPYTHON_AVAILABLE = True
-except ImportError:
-    IPYTHON_AVAILABLE = False
-    # Streamlit 환경에서는 사용하지 않으므로 더미 객체 생성
-    class Audio:
-        def __init__(self, *args, **kwargs):
-            pass
-    def display(*args, **kwargs):
-        pass
+from IPython.display import Audio, display
 
 # ffmpeg 경로 설정 (imageio-ffmpeg 사용)
 import subprocess

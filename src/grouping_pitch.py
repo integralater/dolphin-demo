@@ -6,39 +6,7 @@ from gtts_expr_audio_pitch import AudioPolicy, GTTSCache, trim_silence, silence,
 import os
 import sys
 from typing import List, Tuple
-
-# IPython.display는 선택적 임포트 (Jupyter/Colab 환경에서만 필요)
-try:
-    from IPython.display import Audio, display, HTML
-    IPYTHON_AVAILABLE = True
-except ImportError:
-    IPYTHON_AVAILABLE = False
-    # Streamlit 환경에서는 사용하지 않으므로 더미 객체 생성
-    class Audio:
-        def __init__(self, *args, **kwargs):
-            pass
-    def display(*args, **kwargs):
-        pass
-    class HTML:
-        def __init__(self, *args, **kwargs):
-            pass
-
-# pydub의 audioop 의존성 문제 해결 (Python 3.13+)
-try:
-    import audioop
-except ImportError:
-    try:
-        import pyaudioop as audioop
-    except ImportError:
-        # audioop가 없으면 더미 모듈 생성
-        class DummyAudioop:
-            def __getattr__(self, name):
-                def dummy_func(*args, **kwargs):
-                    raise NotImplementedError(f"audioop.{name} is not available")
-                return dummy_func
-        audioop = DummyAudioop()
-        sys.modules['audioop'] = audioop
-        sys.modules['pyaudioop'] = audioop
+from IPython.display import Audio, display, HTML
 
 from pydub import AudioSegment
 
