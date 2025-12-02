@@ -1,6 +1,6 @@
 streamlit
 gTTS
-pydub>=0.25.1
+pydub
 numpy
 imageio-ffmpeg
 matplotlib
