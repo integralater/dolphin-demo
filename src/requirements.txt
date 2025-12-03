@@ -5,3 +5,4 @@ numpy
 imageio-ffmpeg
 matplotlib
 ipython
+math

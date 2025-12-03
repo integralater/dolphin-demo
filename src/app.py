@@ -2,9 +2,10 @@ import streamlit as st
 import os
 import tempfile
 from gtts import gTTS
+import math
 
 # 가이드라인에 명시된 핵심 모듈 임포트
-from LaTeX_Parser import latex_to_expression
+from LaTeX_Parser import latex_to_expression, test_cases
 from Expression_Syntax import expression_to_korean, expression_to_tokens_with_pitch
 from speech_synthesizer import MathSpeechSynthesizer
 from gtts_expr_audio_pitch import AudioPolicy
@@ -41,12 +42,66 @@ st.sidebar.info("Dolphin-doing-Math Project\nLatex to Korean Speech")
 st.title("🔢 LaTeX 수식 음성 합성 데모")
 #st.markdown(f"현재 설정: **{style_option}** 스타일 | **{'구어체' if is_naive else '형식적'}** 모드")
 
+# [Session State 초기화]
+# 입력창의 값을 저장하고 버튼과 동기화하기 위한 변수입니다.
+if "target_latex" not in st.session_state:
+    # 초기값 설정 (리스트가 비어있지 않다면 첫 번째 케이스 사용)
+    if test_cases and isinstance(test_cases[0], (tuple, list)):
+        st.session_state["target_latex"] = test_cases[0][0]
+    else:
+        st.session_state["target_latex"] = r"\sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}"
+
+# ----------------- [UI 1] Test Cases 선택 UI -----------------
+with st.expander("📚 테스트 케이스 (Test Cases) 선택 패널", expanded=True):
+    st.caption("아래 번호를 클릭하면 해당 수식이 자동으로 입력됩니다.")
+    
+    # 1. 페이지 계산 (15개씩 분할)
+    BATCH_SIZE = 15
+    total_items = len(test_cases)
+    total_pages = math.ceil(total_items / BATCH_SIZE)
+
+    # 2. 범주(페이지) 선택 박스
+    # 예: "Section 1 (1~15)", "Section 2 (16~30)" ...
+    page_options = [f"Section {i+1} ({i*BATCH_SIZE + 1} ~ {min((i+1)*BATCH_SIZE, total_items)})" for i in range(total_pages)]
+    selected_page = st.selectbox("범주 선택", page_options, label_visibility="collapsed")
+
+    # 3. 버튼 생성 및 이벤트 처리
+    if selected_page:
+        page_idx = page_options.index(selected_page)
+        start_idx = page_idx * BATCH_SIZE
+        end_idx = min(start_idx + BATCH_SIZE, total_items)
+        
+        # 현재 페이지에 해당하는 데이터 슬라이싱
+        current_batch = test_cases[start_idx:end_idx]
+        
+        # 5열 그리드로 버튼 배치
+        cols = st.columns(5)
+        
+        for i, item in enumerate(current_batch):
+            real_idx = start_idx + i + 1
+            
+            # [핵심 변경 사항] item이 (latex, ast) 튜플이므로 첫 번째 요소 추출
+            if isinstance(item, (tuple, list)):
+                latex_code = item[0]
+            else:
+                latex_code = str(item) # 만약 튜플이 아닌 문자열만 있는 경우 대비
+
+            with cols[i % 5]:
+                # 버튼 라벨: "No. 1", "No. 2" ...
+                if st.button(f"No. {real_idx}", key=f"btn_{real_idx}", use_container_width=True):
+                    st.session_state["target_latex"] = latex_code
+                    st.rerun()
+
+st.markdown("---")
 # 입력창
 latex_input = st.text_area(
     "LaTeX 수식을 입력하세요:",
     value=r"\sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}",
-    height=120
+    height=120,
+    key="target_latex"
 )
+
+
 
 # ----------------- D. 실시간 분석 및 변환 로직 -----------------
 if latex_input.strip():
