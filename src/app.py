@@ -3,6 +3,9 @@ import os
 import tempfile
 from gtts import gTTS
 import math
+import csv            # [추가] CSV 기록용
+import shutil         # [추가] 파일 복사용
+from datetime import datetime # [추가] 타임스탬프용
 
 # 가이드라인에 명시된 핵심 모듈 임포트
 from LaTeX_Parser import latex_to_expression, test_cases
@@ -10,6 +13,57 @@ from Expression_Syntax import expression_to_korean, expression_to_tokens_with_pi
 from speech_synthesizer import MathSpeechSynthesizer
 from gtts_expr_audio_pitch import AudioPolicy
 from grouping_pitch import latex_audio_grouping_pitch
+
+# ----------------- [추가된 함수] 로컬 저장 로직 -----------------
+def save_log_local(latex_text, style_mode, src_audio_path):
+    """
+    생성된 오디오 파일과 메타데이터(수식, 모드, 시간)를 로컬 폴더에 저장합니다.
+    """
+    # 1. 저장할 기본 디렉토리 설정
+    base_dir = "saved_data"
+    audio_dir = os.path.join(base_dir, "audio")
+    
+    # 폴더가 없으면 생성
+    os.makedirs(audio_dir, exist_ok=True)
+    
+    # 2. 파일명 생성 (날짜_시간_스타일.mp3)
+    now = datetime.now()
+    timestamp_str = now.strftime("%Y%m%d_%H%M%S")
+    # 파일명에 공백이 있으면 관리가 어려우므로 _로 대체
+    safe_style = style_mode.replace(" ", "_") 
+    filename = f"{timestamp_str}_{safe_style}.mp3"
+    dest_audio_path = os.path.join(audio_dir, filename)
+    
+    # 3. 임시 오디오 파일을 영구 저장소로 복사
+    try:
+        shutil.copy(src_audio_path, dest_audio_path)
+    except Exception as e:
+        print(f"파일 복사 실패: {e}")
+        return
+
+    # 4. CSV 파일에 로그 기록 (saved_data/history_log.csv)
+    log_file_path = os.path.join(base_dir, "history_log.csv")
+    file_exists = os.path.isfile(log_file_path)
+    
+    try:
+        # utf-8-sig는 엑셀에서 한글 깨짐을 방지합니다.
+        with open(log_file_path, 'a', newline='', encoding='utf-8-sig') as f:
+            writer = csv.writer(f)
+            
+            # 파일이 처음 생성될 때만 헤더 작성
+            if not file_exists:
+                writer.writerow(["Timestamp", "Style_Mode", "Audio_Filename", "LaTeX_Input"])
+            
+            # 데이터 한 줄 추가
+            writer.writerow([
+                now.strftime("%Y-%m-%d %H:%M:%S"), 
+                style_mode, 
+                filename, 
+                latex_text
+            ])
+            print(f"로그 저장 완료: {filename}")
+    except Exception as e:
+        print(f"CSV 기록 실패: {e}")
 
 # ----------------- A. 페이지 설정 -----------------
 st.set_page_config(
@@ -157,6 +211,8 @@ if latex_input.strip():
                 elif style_option == "grouping version":
                     latex_audio_grouping_pitch(expr, output_path)
                 
+                save_log_local(latex_input, style_option, output_path)
+
                 # 재생 및 다운로드 UI
                 st.success("생성 완료!")
                 st.audio(output_path, format='audio/mp3')
@@ -168,9 +224,6 @@ if latex_input.strip():
                         file_name="math_speech.mp3",
                         mime="audio/mp3"
                     )
-                
-                # 임시 파일 정리 (선택 사항)
-                # os.remove(output_path) 
 
             except Exception as e:
                 st.error(f"음성 합성 중 오류 발생: {e}")
