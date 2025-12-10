@@ -109,8 +109,93 @@ if is_male == "male":
 else:
     is_male = False
 
+st.sidebar.markdown("### 🔊 오디오 스타일 설정")
+pitch_scale = st.sidebar.slider(
+    "피치 변화 강도 (Pitch Scale)",
+    min_value=0.0,   # 최소 변화량 (0이면 변화 없음)
+    max_value=10.0,  # 최대 변화량 (필요에 따라 조절)
+    value=2.0,       # 기본값 (기존에 사용하던 수치)
+    step=0.5,        # 조절 단위
+    help="수식의 깊이(depth)에 따른 음 높낮이 변화 폭을 조절합니다. 값이 클수록 변화가 급격해집니다."
+)
+
+
 st.sidebar.markdown("---")
 st.sidebar.info("Dolphin-doing-Math Project\nLatex to Korean Speech")
+
+with st.expander("ℹ️ 튜토리얼: 수식의 구조를 소리로 듣는 법 (여기를 클릭하세요)"):
+    st.markdown("### 🎵 피치(Pitch) 변화 원리")
+    st.write("""
+    이 프로그램은 눈으로 보는 수식의 구조를 귀로 파악할 수 있도록, 
+    **수식의 깊이(Depth)**에 따라 목소리의 높낮이를 실시간으로 조절합니다.
+    """)
+    
+    st.divider() # 구분선
+
+    col1, col2 = st.columns([1, 2])
+    
+    with col1:
+        st.markdown("**예시:**")
+        st.latex(r"x + \frac{1}{y^2}")
+    
+    with col2:
+        st.markdown("**작동 방식:**")
+        st.markdown("""
+        1. **기본 톤:** $x +$ (가장 바깥쪽)
+        2. **1단계 변화:** 분수 안으로 진입 시 ($1$, $y$) 피치가 변함
+        3. **2단계 변화:** 지수 안으로 진입 시 ($^2$) 피치가 더 크게 변함
+        """)
+
+    st.info("""
+    💡 **팁:** 사이드바의 **'피치 변화 강도'** 슬라이더를 조절하여, 
+    깊이에 따른 목소리 변화폭을 나에게 맞게 설정할 수 있습니다.
+    """)
+
+with st.expander("📖 Grouping pitch 튜토리얼 (상세 매뉴얼)"):
+    st.write("수학 기호는 크게 **원자 값, 전위 연산자, 중위 연산자, 후위 연산자, 서술자**로 구분합니다.")
+    
+    st.markdown("---") # 구분선
+
+    st.markdown("#### 1) 원자 값 (Atomic value)")
+    st.write("더 이상 분해하지 않고 그 자체로 항(operand)이 되는 최소 단위입니다.")
+    st.markdown("- **예시:** 숫자 $3$, 변수 $x$, 상수 $e$, $\pi$, $\emptyset$, 무한($\infty$) 등")
+
+    st.markdown("#### 2) 전위 연산자 (Prefix / unary operator)")
+    st.write("피연산자보다 연산자를 먼저 읽는 연산자입니다.")
+    st.markdown("- **예시:** $|x|$ (절댓값), $[x]$ (가우스), $\sqrt{x}$ (루트), $\sin$ (사인), $+x$, $-x$ 등")
+
+    st.markdown("#### 3) 중위 연산자 (Infix / binary operator)")
+    st.write("두 항 사이에 위치해서 두 항을 결합하는 연산자로, 읽을 때에도 두 피연산자 중간에 읽습니다.")
+    st.markdown("""
+    **예시:**
+    - $a+b$
+    - $A \cap B$
+    - $a:b:c$
+    """)
+
+    st.markdown("#### 4) 후위 연산자 (Postfix operator)")
+    st.write("피연산자 뒤에 붙어서 피연산자를 먼저 말하고, 연산자를 말합니다.")
+    st.markdown("""
+    **예시:**
+    - $n!$
+    - $f'$
+    - $x_1$, $x^2$
+    """)
+
+    st.markdown("#### 5) 서술자 (Descriptive / relational operator)")
+    st.write("값을 만들어내는 연산이라기보다, **문장(명제)**을 만듭니다.")
+    st.markdown("""
+    - **비교/관계:** $=, \\neq, <, \leq, >$
+    - **집합 관계:** $\in, \\notin, \subset, \subseteq, \supseteq$
+    - **논리/함의 관계:** $\\to, \Rightarrow, \iff, \Leftrightarrow$
+    - **기하 관계:** $\parallel, \perp, \equiv, \sim$
+    """)
+    st.markdown("""
+    **예시:**
+    - $a=b$
+    - $x \in A$
+    - $l \perp m$
+    """)
 
 # ----------------- C. 메인 화면 구성 -----------------
 st.title("🔢 LaTeX 수식 음성 합성 데모")
@@ -209,46 +294,88 @@ if latex_input.strip():
 
     st.markdown("---")
 
-    # ----------------- E. 음성 변환 및 재생 버튼 -----------------
+# ----------------- E. 음성 변환 및 재생 버튼 -----------------
     if st.button("🔊 음성 변환 및 재생", type="primary"):
         with st.spinner(f"=음성을 생성 중입니다..."):
             
-            # 임시 파일 생성
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_file:
-                output_path = tmp_file.name
+            # 최종적으로 재생할 파일의 경로를 담을 변수
+            final_audio_path = None
 
-            try:# 스타일별 분기 처리 (가이드라인 '음원 생성 방법' 참조)
-                if style_option == "non-pitch change":
-                    # gTTS 직접 사용 (피치 변화 없음)
-                    tts = gTTS(text=korean_text, lang='ko')
-                    tts.save(output_path)
+            try:
+                # 1. gTTS 계열 (표준, 높낮이 없음) - 임시 파일 필요
+                if style_option in ["non-pitch change", "standard"]:
+                    # gTTS는 경로를 리턴하지 않고 직접 저장하므로 임시 파일을 미리 만듭니다.
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_file:
+                        temp_path = tmp_file.name
+                    
+                    if style_option == "non-pitch change":
+                        tts = gTTS(text=korean_text, lang='ko')
+                        tts.save(temp_path)
+                    elif style_option == "standard":
+                        tts = gTTS(text=latex_input, lang='ko')
+                        tts.save(temp_path)
+                    
+                    # 저장된 임시 파일 경로를 최종 경로로 설정
+                    final_audio_path = temp_path
 
-                elif style_option == "standard":
-                    tts = gTTS(text=latex_input, lang='ko')
-                    tts.save(output_path)
-                               
+                # 2. 커스텀 계열 (Depth, Grouping) - 함수가 경로를 리턴함
                 elif style_option == "depth version":
-                    # MathSpeechSynthesizer 기본 정책 사용 (피치 변조 적용)
-                    latex_audio_depth_change(latex_input, output_path, is_male = is_male, is_naive = is_naive)
+                    # [중요] 함수가 반환하는 '진짜 경로'를 받습니다. 임시 파일 경로는 넘기지 않아도 됩니다(라이브러리에서 알아서 함).
+                    final_audio_path = latex_audio_depth_change(
+                        latex_input, 
+                        is_male=is_male, 
+                        is_naive=is_naive,
+                        filename="depth_ver.mp3" # 식별용 이름 (UUID 자동 부착됨)
+                    )
                 
                 elif style_option == "grouping version":
-                    latex_audio_grouping_pitch(latex_input, output_path, is_male = is_male, is_naive = is_naive)
-                
-                save_log_local(latex_input, style_option, output_path)
+                    # [중요] 리턴값을 받아야 재생 가능!
+                    final_audio_path = latex_audio_grouping_pitch(
+                        latex_input, 
+                        is_male=is_male, 
+                        is_naive=is_naive,
+                        filename="grouping_ver.mp3"
+                    )
 
-                # 재생 및 다운로드 UI
-                st.success("생성 완료!")
-                st.audio(output_path, format='audio/mp3')
+                # ---------------------------------------------------------
+                # 공통 재생 및 저장 로직
+                # ---------------------------------------------------------
                 
-                with open(output_path, "rb") as file:
+                if final_audio_path and os.path.exists(final_audio_path):
+                    st.success("생성 완료!")
+                    
+                    # 1. 로컬에 백업 저장 (로그 기록)
+                    save_log_local(latex_input, style_option, final_audio_path)
+
+                    # 2. 파일을 바이너리로 읽어서 재생 (브라우저 권한 문제 해결)
+                    with open(final_audio_path, "rb") as f:
+                        audio_bytes = f.read()
+    
+                    # 확장자 확인
+                    file_ext = os.path.splitext(final_audio_path)[1].lower()
+                    mime_type = "audio/wav" if "wav" in file_ext else "audio/mp3"
+                    
+                    # 플레이어 표시
+                    st.audio(audio_bytes, format=mime_type)
+                    
+                    # 다운로드 버튼
                     st.download_button(
                         label="⬇️ MP3 다운로드",
-                        data=file,
-                        file_name="math_speech.mp3",
-                        mime="audio/mp3"
+                        data=audio_bytes,
+                        file_name=os.path.basename(final_audio_path),
+                        mime=mime_type
                     )
+                    
+                    # (선택) gTTS로 만든 임시 파일인 경우에만 삭제 (캐시 파일은 유지)
+                    # if style_option in ["non-pitch change", "standard"]:
+                    #    os.remove(final_audio_path)
+
+                else:
+                    st.error("오디오 파일이 생성되지 않았거나 경로를 찾을 수 없습니다.")
+                    # 디버깅용: 경로가 뭐로 잡혔는지 확인
+                    st.write(f"Debug: final_audio_path = {final_audio_path}")
 
             except Exception as e:
                 st.error(f"음성 합성 중 오류 발생: {e}")
-else:
-    st.info("수식을 입력하면 미리보기와 변환 결과가 나타납니다.")
+                import traceback
+                st.text(traceback.format_exc()) # 상세 에러 로그 출력
