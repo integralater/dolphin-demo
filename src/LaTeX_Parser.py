@@ -2098,6 +2098,34 @@ def _strip_endcases_expr(expr: Expression) -> Expression:
 def _rewrite_implicit_chain(factors: List[Expression]) -> Optional[Expression]:
     n = len(factors)
 
+    # --- 대분수 인식: (정수) (Frac) -> MixedFrac ---
+    if n == 2 and isinstance(factors[1], Frac):
+        whole = factors[0]
+        frac: Frac = factors[1]
+
+        def _as_int_value_if_integer_string(v: Value) -> Optional[Value]:
+            # v.val이 int면 그대로, str이면 "정수 문자열"일 때만 int로 변환
+            if isinstance(v.val, int):
+                return v
+            if isinstance(v.val, str):
+                s = v.val.strip()
+                # 순수 숫자만 허용 (선행 0 허용), 소수점/지수 표기 배제
+                if s.isdigit():
+                    return Value(int(s))
+            return None
+
+        # case 1: 정수 그대로 또는 정수 문자열
+        if isinstance(whole, Value):
+            iv = _as_int_value_if_integer_string(whole)
+            if iv is not None:
+                return MixedFrac(iv, frac.num, frac.denom)
+
+        # case 2: -(정수) (옵션)  → -(MixedFrac)
+        if isinstance(whole, Minus) and isinstance(whole.expr, Value):
+            iv = _as_int_value_if_integer_string(whole.expr)
+            if iv is not None:
+                return Minus(MixedFrac(iv, frac.num, frac.denom))
+
     if n == 2 and isinstance(factors[0], Value) and factors[0].val == "P":
         event = factors[1]
         return Prob(event)
@@ -3106,6 +3134,7 @@ test_cases = [
     (r"\pi \fallingdotseq 3.141592 \approx 3", Eq( Value("π"), About(Eq( Value(3.141592), About(Value(3))  )) ) ),
     (r"\frac{d}{dx} [f(x)]", Diff(Gauss(Func(Value("f"), [Value("x")])), Value("x"), Value(1)) ),
     (r"f: X\to Y", FuncDef(Value("f"), Value("X"), Value("Y")) ),
+    (r"3\frac{1}{2}", MixedFrac( Value(3), Value(1), Value(2)) ),
 ]
 
 def normalize_repr(s: str) -> str:
@@ -3248,7 +3277,7 @@ def run_range_tests(start: int, end: int):
     print("=" * 80)
     print(f"Range {start}-{end}: {passed} PASSED, {failed} FAILED")
 
-'''
+
 if __name__ == "__main__":
     import sys
 
@@ -3293,4 +3322,3 @@ if __name__ == "__main__":
 
 if __name__ == "__main__":
     run_tests()
-    '''

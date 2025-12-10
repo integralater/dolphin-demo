@@ -7,3 +7,18 @@ Timestamp,Style_Mode,Audio_Filename,LaTeX_Input
 ,,,
 ,,,
 ,,,
+2025-12-10 15:24:11,standard,20251210_152411_standard.mp3,x
+2025-12-10 15:24:25,standard,20251210_152425_standard.mp3,x + 1/y
+2025-12-10 15:24:37,standard,20251210_152437_standard.mp3,x^2
+2025-12-10 15:24:47,standard,20251210_152447_standard.mp3,x^(2)
+2025-12-10 15:25:00,standard,20251210_152500_standard.mp3,(x^2)
+2025-12-10 15:25:11,standard,20251210_152511_standard.mp3,x^{2}
+2025-12-10 15:25:23,standard,20251210_152523_standard.mp3,|x|
+2025-12-10 15:25:34,standard,20251210_152534_standard.mp3,\frac{x+1}{x-1}
+2025-12-10 15:25:48,standard,20251210_152548_standard.mp3,x^2 + 2x + 1
+2025-12-10 15:26:00,standard,20251210_152600_standard.mp3,x^2
+2025-12-10 15:26:18,standard,20251210_152618_standard.mp3,x^2+2x+1
+2025-12-10 15:32:01,standard,20251210_153201_standard.mp3,x
+2025-12-10 15:41:16,standard,20251210_154116_standard.mp3,x
+2025-12-10 15:41:22,non-pitch change,20251210_154122_non-pitch_change.mp3,x
+2025-12-10 15:41:41,non-pitch change,20251210_154141_non-pitch_change.mp3,\tan(x) = \frac{\sin(x)}{\cos(x)}

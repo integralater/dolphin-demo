@@ -7,12 +7,20 @@ import csv            # [추가] CSV 기록용
 import shutil         # [추가] 파일 복사용
 from datetime import datetime # [추가] 타임스탬프용
 
+from expr_audio_pitch import (
+    latex_audio_depth_change,
+    latex_audio_grouping_pitch,
+    AudioPolicy,
+    create_custom_policy
+)
+
+from IPython.display import Audio, display
+import os
+
 # 가이드라인에 명시된 핵심 모듈 임포트
 from LaTeX_Parser import latex_to_expression, test_cases
 from Expression_Syntax import expression_to_korean, expression_to_tokens_with_pitch
 from speech_synthesizer import MathSpeechSynthesizer
-from gtts_expr_audio_pitch import AudioPolicy
-from grouping_pitch import latex_audio_grouping_pitch
 
 # ----------------- [추가된 함수] 로컬 저장 로직 -----------------
 def save_log_local(latex_text, style_mode, src_audio_path):
@@ -77,9 +85,9 @@ st.sidebar.title("🎛️ 옵션 설정")
 # 1. 발음 스타일 선택
 style_option = st.sidebar.selectbox(
     "발음 스타일 (Style)",
-    ("non-pitch change", "depth version", "grouping version"),
-    index=2, # 기본값: Expressive
-    help="non-pitch changle: 높낮이 없음\nepth version: d 자연스러운 피치\nHierarchical: 구조 강조형"
+    ("standard", "non-pitch change", "depth version", "grouping version"),
+    index=0, # 기본값: Expressive
+    help="standard: 기본TTS\nnon-pitch changle: 높낮이 없음\nepth version: d 자연스러운 피치\nHierarchical: 구조 강조형"
 )
 
 # 2. 구어체 모드 선택
@@ -88,6 +96,18 @@ is_naive = st.sidebar.checkbox(
     value=True,
     help="체크 시: '이 분의 일' (자연스러움)\n해제 시: 형식적인 수학 표현"
 )
+
+# 3. 음성 성별 선택
+is_male = st.sidebar.selectbox(
+    "음성 성별",
+    ("male", "female"),
+    index=0
+)
+
+if is_male == "male":
+    is_male = True
+else:
+    is_male = False
 
 st.sidebar.markdown("---")
 st.sidebar.info("Dolphin-doing-Math Project\nLatex to Korean Speech")
@@ -202,14 +222,17 @@ if latex_input.strip():
                     # gTTS 직접 사용 (피치 변화 없음)
                     tts = gTTS(text=korean_text, lang='ko')
                     tts.save(output_path)
+
+                elif style_option == "standard":
+                    tts = gTTS(text=latex_input, lang='ko')
+                    tts.save(output_path)
                                
                 elif style_option == "depth version":
                     # MathSpeechSynthesizer 기본 정책 사용 (피치 변조 적용)
-                    synthesizer = MathSpeechSynthesizer()
-                    synthesizer.save(expr, output_path=output_path)
+                    latex_audio_depth_change(latex_input, output_path, is_male = is_male, is_naive = is_naive)
                 
                 elif style_option == "grouping version":
-                    latex_audio_grouping_pitch(expr, output_path)
+                    latex_audio_grouping_pitch(latex_input, output_path, is_male = is_male, is_naive = is_naive)
                 
                 save_log_local(latex_input, style_option, output_path)
 

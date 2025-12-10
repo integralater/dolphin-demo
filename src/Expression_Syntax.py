@@ -2279,8 +2279,6 @@ def expression_to_korean(expr, is_nested=False, is_naive=False):
         return f"벡터 {expression_to_korean(expr.expr, is_naive=is_naive)}"
     if isinstance(expr, Norm):
         return f"노름 {expression_to_korean(expr.expr, is_naive=is_naive)}"
-    if isinstance(expr, Unit):
-        return expr.unit
     if isinstance(expr, Triangle):
         return f"삼각형 {expr.vertices}"
     if isinstance(expr, Angle):
@@ -2985,7 +2983,21 @@ def expression_to_korean_with_depth(expr, depth=0, is_nested=False, is_naive=Fal
         return result
 
     if isinstance(expr, Unit):
-        return [(expr.unit, depth)]
+        # Unit_dictionary에서 발음 찾기
+        try:
+            import csv
+            import os
+            dict_path = os.path.join(os.path.dirname(__file__), 'Unit_dictionary.csv')
+            with open(dict_path, 'r', encoding='utf-8-sig') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    if row['표기법'] == expr.unit:
+                        result.append((row['한국어 발음'], depth))
+                        return result
+        except Exception as e:
+            pass  # 파일이 없거나 오류가 발생하면 기본값 사용
+        result.append((expr.unit, depth))  # 기본값
+        return result
 
     if isinstance(expr, Triangle):
         return [("삼각형", depth), (expr.vertices, depth)]
@@ -4367,8 +4379,12 @@ def expression_to_tokens_with_pitch(expr, d=0, in_condition=False, is_naive=Fals
         num_part = expr.num
         denom_part = expr.denom
         
-        tokens.extend(expression_to_tokens_with_pitch(whole, d, in_condition, is_naive))
-        tokens.append(("와", d, 0))
+        whole_token = expression_to_tokens_with_pitch(whole, d, in_condition, is_naive)
+        tokens.extend(whole_token)
+
+        head = pick_head_for_particle_from_tokens(whole_token)
+        nen, iga, reul, gwa, euro = get_particle(head)
+        tokens.append((gwa, d, 0))
         
         denom_d = d + 1 if is_operator(denom_part) else d
         num_d = d + 1 if is_operator(num_part) else d
@@ -5679,8 +5695,21 @@ def expression_to_tokens_with_pitch(expr, d=0, in_condition=False, is_naive=Fals
     # ==================== 단위/기타 ====================
 
     if isinstance(expr, Unit):
-        kor = unit_to_korean(expr.unit)
-        return [(kor, d, 0)]
+        # Unit_dictionary에서 발음 찾기
+        try:
+            import csv
+            import os
+            dict_path = os.path.join(os.path.dirname(__file__), 'Unit_dictionary.csv')
+            with open(dict_path, 'r', encoding='utf-8-sig') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    if row['표기법'] == expr.unit:
+                        tokens.append((row['한국어 발음'], d, 0))
+                        return tokens
+        except Exception as e:
+            pass  # 파일이 없거나 오류가 발생하면 기본값 사용
+        tokens.append((expr.unit, d, 0))  # 기본값
+        return tokens
 
     if isinstance(expr, UnitDiv):
         num_unit = expr.num_unit
@@ -6517,7 +6546,5 @@ def test_grouping_pitch_cases():
 
     print(f"\n전체 통과: {passed_count}/{total_cases}")
 
-'''
 if __name__ == "__main__":
     test_grouping_pitch_cases()
-'''
