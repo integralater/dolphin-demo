@@ -36,3 +36,18 @@ Timestamp,Style_Mode,Audio_Filename,LaTeX_Input
 2025-12-10 19:20:00,grouping version,20251210_192000_grouping_version.mp3,x
 2025-12-10 19:24:42,depth version,20251210_192442_depth_version.mp3,x
 2025-12-10 19:26:30,grouping version,20251210_192630_grouping_version.mp3,x
+2025-12-10 19:46:01,standard,20251210_194601_standard.mp3,x
+2025-12-10 19:46:38,standard,20251210_194638_standard.mp3,x^2 + 2x + 1
+2025-12-10 19:46:51,non-pitch change,20251210_194651_non-pitch_change.mp3,x^2 + 2x + 1
+2025-12-10 19:47:08,non-pitch change,20251210_194708_non-pitch_change.mp3,\frac{x+1}{x-1}
+2025-12-10 19:47:18,standard,20251210_194718_standard.mp3,\frac{x+1}{x-1}
+2025-12-10 19:47:37,standard,20251210_194737_standard.mp3,x-1
+2025-12-10 19:48:04,standard,20251210_194804_standard.mp3,x/y
+2025-12-10 19:57:13,standard,20251210_195713_standard.mp3,x^2 + 2x + 1
+2025-12-10 19:57:28,standard,20251210_195728_standard.mp3,x-1
+2025-12-10 19:57:54,standard,20251210_195754_standard.mp3,a/b
+2025-12-10 19:59:27,non-pitch change,20251210_195927_non-pitch_change.mp3,a(b+c)
+2025-12-10 19:59:36,non-pitch change,20251210_195936_non-pitch_change.mp3,ab+c
+2025-12-10 20:00:22,non-pitch change,20251210_200022_non-pitch_change.mp3,x + \frac{1}{y}
+2025-12-10 20:00:32,non-pitch change,20251210_200032_non-pitch_change.mp3,\frac{1}{x+y}
+2025-12-10 20:06:58,grouping version,20251210_200658_grouping_version.mp3,\frac{1}{x+y}
