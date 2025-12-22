@@ -51,3 +51,18 @@ Timestamp,Style_Mode,Audio_Filename,LaTeX_Input
 2025-12-10 20:00:22,non-pitch change,20251210_200022_non-pitch_change.mp3,x + \frac{1}{y}
 2025-12-10 20:00:32,non-pitch change,20251210_200032_non-pitch_change.mp3,\frac{1}{x+y}
 2025-12-10 20:06:58,grouping version,20251210_200658_grouping_version.mp3,\frac{1}{x+y}
+2025-12-22 01:02:27,standard,20251222_010227_standard.mp3,x^2+2x+1
+2025-12-22 01:02:39,standard,20251222_010239_standard.mp3,x^2+2x+1
+2025-12-22 10:01:08,standard,20251222_100108_standard.mp3,2\times3=6
+2025-12-22 10:01:30,standard,20251222_100130_standard.mp3,|x|<1
+2025-12-22 10:02:14,standard,20251222_100214_standard.mp3,[x]
+2025-12-22 10:02:39,standard,20251222_100239_standard.mp3,n!
+2025-12-22 10:03:09,standard,20251222_100309_standard.mp3,1+x/y
+2025-12-22 10:03:27,standard,20251222_100327_standard.mp3,1+\frac(x)(y)
+2025-12-22 10:03:43,standard,20251222_100343_standard.mp3,1+\frac{x}{y}
+2025-12-22 10:05:20,standard,20251222_100520_standard.mp3,\sin x + \tan^2 x
+2025-12-22 10:05:48,standard,20251222_100548_standard.mp3,2 \times 3 = 6
+2025-12-22 10:06:24,standard,20251222_100624_standard.mp3,2 \times 3 =6
+2025-12-22 10:54:59,standard,20251222_105459_standard.mp3,log_2 3
+2025-12-22 10:55:21,standard,20251222_105521_standard.mp3,\int x^2 dx
+2025-12-22 10:55:26,standard,20251222_105526_standard.mp3,\int x^2 dx

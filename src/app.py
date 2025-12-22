@@ -97,18 +97,6 @@ is_naive = st.sidebar.checkbox(
     help="체크 시: '이 분의 일' (자연스러움)\n해제 시: 형식적인 수학 표현"
 )
 
-# 3. 음성 성별 선택
-is_male = st.sidebar.selectbox(
-    "음성 성별",
-    ("male", "female"),
-    index=0
-)
-
-if is_male == "male":
-    is_male = True
-else:
-    is_male = False
-
 st.sidebar.markdown("### 🔊 오디오 스타일 설정")
 pitch_scale = st.sidebar.slider(
     "피치 변화 강도 (Pitch Scale)",
