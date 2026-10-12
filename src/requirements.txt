@@ -7,8 +7,8 @@ matplotlib
 ipython
 #math
 #csv            # [추가] CSV 기록용
-shutil         # [추가] 파일 복사용
-datetime
+#shutil         # [추가] 파일 복사용
+#datetime
 torch
 torchaudio
 soundfile
