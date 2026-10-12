@@ -297,9 +297,11 @@ if latex_input.strip():
                         temp_path = tmp_file.name
                     
                     if style_option == "non-pitch change":
+                        #피치 변화 없는 버전 함수로 변경해야함.
                         tts = gTTS(text=korean_text, lang='ko')
                         tts.save(temp_path)
                     elif style_option == "standard":
+                        #보여주고 싶은 본 함수로 변경해야함.
                         tts = gTTS(text=latex_input, lang='ko')
                         tts.save(temp_path)
                     
